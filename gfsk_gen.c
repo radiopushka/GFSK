@@ -11,9 +11,10 @@ int main(){
 
     short *frame = malloc(bsize*sizeof(short));
 
-    struct gfsk_mod* mod = create_gfsk_mod(19000.0,2000,48000,12000);
+    struct gfsk_mod* mod = create_gfsk_mod(19000.0,1500,48000,12000);
 
     char* string = " ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 - = + []\n";
+    //char* string = "Hello World!\n";
     int len_st = strlen(string);
 
     set_gfsk_data(mod,(unsigned char*)string,len_st);

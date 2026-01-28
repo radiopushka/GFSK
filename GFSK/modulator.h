@@ -30,9 +30,14 @@ struct gfsk_demod{
     int p2;
 
 
+
     uint16_t frame;
 
+    int packet_size;
+
     int bit_count;
+
+    int preamb_manchester;//0 for preamble, 1 for manchester encoding
 
 };
 
@@ -56,6 +61,8 @@ struct gfsk_mod{
     int dcount_max;
 
     float value;
+
+    int preamb_manchester;//0 for preamble, 1 for manchester encoding
 };
 
 //gfsk demodulator

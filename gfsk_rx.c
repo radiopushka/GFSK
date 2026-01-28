@@ -10,7 +10,7 @@ int main(){
 
     short *frame = malloc(bsize*sizeof(short));
 
-    struct gfsk_demod* mod = create_gfsk_demod(6000.0,8000,48000);
+    struct gfsk_demod* mod = create_gfsk_demod(8000.0,12000,48000);
 
     char* output = malloc(1024*sizeof(char));
     char* trm = malloc(1024*sizeof(char));

@@ -228,7 +228,7 @@ void set_gfsk_data(struct gfsk_mod* gfsk, unsigned char* data,int length){
     unsigned char* d = gfsk->data;
     for(unsigned char* i = data;i<data+length;i++){
         *d = *i;
-        d++;
+        d++;//manchester encoding
         *d = ~(*i);
         d++;
     }

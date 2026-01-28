@@ -2,7 +2,6 @@
 #include "GFSK/modulator.h"
 #include<stdio.h>
 #include<stdlib.h>
-#include<string.h>
 
 int main(){
     int bsize = 1024;
@@ -11,7 +10,7 @@ int main(){
 
     short *frame = malloc(bsize*sizeof(short));
 
-    struct gfsk_demod* mod = create_gfsk_demod(19000.0,1500,48000);
+    struct gfsk_demod* mod = create_gfsk_demod(6000.0,8000,48000);
 
     char* output = malloc(1024*sizeof(char));
     char* trm = malloc(1024*sizeof(char));

@@ -3,4 +3,5 @@ DSP = ./GFSK/modulator.c ./GFSK/IIR/lpf.c
 
 all:
 	$(CC) ./gfsk_rx.c $(FLAGS) $(DSP) ./alsa/alsa.c -lm -lasound -o gfsk_rx
+	$(CC) ./rtlsdr_data_rx.c $(FLAGS) $(DSP) ./alsa/alsa.c -lm -o sdr_rx
 	$(CC) ./gfsk_gen.c $(FLAGS) $(DSP) ./alsa/alsa.c -lm -lasound -o gfsk_gen

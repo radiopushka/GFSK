@@ -60,6 +60,9 @@ struct gfsk_mod{
     int count;
     int dcount_max;
 
+    int DM;//direct modulation (for PLL VCOs)
+           //most PLLs have capacitor decoupling so manchester encoding is a must
+
     float value;
 
     int preamb_manchester;//0 for preamble, 1 for manchester encoding

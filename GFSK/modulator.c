@@ -13,8 +13,14 @@ struct gfsk_demod* create_gfsk_demod(float carrier_freq,int tx_rate,int sample_r
     gfsk->am = 0;
     gfsk->am_2 = 0;
     float spread = 4;
-    gfsk->am_shifter = ((carrier_freq-(txrate_f/spread))/rate_f)*(M_PI*2);
-    gfsk->am_shifter_2 = ((carrier_freq+(txrate_f/spread))/rate_f)*(M_PI*2);
+
+    float tightness = 0.9;
+
+    float freq1 = carrier_freq-(txrate_f/spread)*tightness;
+    float freq2 = carrier_freq+(txrate_f/spread)*tightness;
+
+    gfsk->am_shifter = (freq1/rate_f)*(M_PI*2);
+    gfsk->am_shifter_2 = (freq2/rate_f)*(M_PI*2);
     float filter_freq = txrate_f;
 
     gfsk->frame = 0;
@@ -60,6 +66,8 @@ struct gfsk_mod* create_gfsk_mod(float carrier_freq,int tx_rate,int sample_rate,
     gfsk->d_end = 0;
     gfsk->value = -1;
     gfsk->d_index = 0;
+
+    gfsk->DM = 0;
 
     gfsk->count = 0;
     gfsk->dcount_max = sample_rate/tx_rate;
@@ -265,13 +273,17 @@ int run_gfsk_mod(struct gfsk_mod* gfsk,short* audio,int size){
         float filter2 = calculate_lpf(gfsk->lpf_mod_2,filter);
 
 
-        float osc = sinf(gfsk->am);
-        gfsk->am +=(gfsk->am_shifter+(filter2*gfsk->mod_index));
-        if(gfsk->am >= M_2PI){
-            gfsk->am -= M_2PI;
+        if(gfsk->DM){
+            *i = (short)(filter2*gfsk->baseline);
+        }else{
+            float osc = sinf(gfsk->am);
+            gfsk->am +=(gfsk->am_shifter+(filter2*gfsk->mod_index));
+            if(gfsk->am >= M_2PI){
+                gfsk->am -= M_2PI;
+            }
+            *i = (short)((osc)*(gfsk->baseline));
         }
 
-        *i = (short)((osc)*(gfsk->baseline));
     }
     return done;
 }

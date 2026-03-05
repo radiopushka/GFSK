@@ -14,14 +14,14 @@ struct gfsk_demod* create_gfsk_demod(float carrier_freq,int tx_rate,int sample_r
     gfsk->am_2 = 0;
     float spread = 4;
 
-    float tightness = 0.9;
+    float tightness = 0.4;
 
-    float freq1 = carrier_freq-(txrate_f/spread)*tightness;
-    float freq2 = carrier_freq+(txrate_f/spread)*tightness;
+    float freq1 = carrier_freq-(txrate_f/spread)*1.317;
+    float freq2 = carrier_freq+(txrate_f/spread)*1.317;
 
     gfsk->am_shifter = (freq1/rate_f)*(M_PI*2);
     gfsk->am_shifter_2 = (freq2/rate_f)*(M_PI*2);
-    float filter_freq = txrate_f;
+    float filter_freq = txrate_f*tightness;
 
     gfsk->frame = 0;
     gfsk->p2 = 0;

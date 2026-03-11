@@ -26,15 +26,15 @@ int setup_alsa(char* recordf, char* playbackf, int buffer_size, int sampler){
   snd_pcm_status_malloc(&record_stat);
   snd_pcm_status_malloc(&plbk_stat);
   if(playbackf!=NULL)
-	if ( snd_pcm_open(&playback, playbackf,SND_PCM_STREAM_PLAYBACK, 0) < 0){		
+	if ( snd_pcm_open(&playback, playbackf,SND_PCM_STREAM_PLAYBACK, 0) < 0){
 		printf("unable to open playback interface\n");
 		return -1;
-	} 
+	}
   if(recordf!=NULL)
-  if ( snd_pcm_open(&record, recordf,SND_PCM_STREAM_CAPTURE, 0) < 0){		
+  if ( snd_pcm_open(&record, recordf,SND_PCM_STREAM_CAPTURE, 0) < 0){
 		printf("unable to open recording interface\n");
 		return -1;
-	} 
+	}
 
   if(playbackf!=NULL)
 	if(configure_sound_card(playback,&playback_sample_rate,&playback_channels,1,buffer_size,&frames)<0){
@@ -61,14 +61,43 @@ int setup_alsa(char* recordf, char* playbackf, int buffer_size, int sampler){
 
   if(recordf!=NULL)
 	snd_pcm_prepare(record);
-	
+
 	return 1;
 }
+int setup_alsa_IQ(char* playbackf, int buffer_size, int sampler){
+	int frames=1;
+  nullp = malloc(sizeof(short)* buffer_size);
+  record_sample_rate = sampler;
+  playback_sample_rate = sampler;
+  alsa_buffer_size = buffer_size;
+  playback_channels=2;
+  snd_pcm_status_malloc(&plbk_stat);
+  if(playbackf!=NULL)
+	if ( snd_pcm_open(&playback, playbackf,SND_PCM_STREAM_PLAYBACK, 0) < 0){
+		printf("unable to open playback interface\n");
+		return -1;
+	}
+
+  if(playbackf!=NULL)
+	if(configure_sound_card(playback,&playback_sample_rate,&playback_channels,1,buffer_size,&frames)<0){
+    printf("play config failed \n");
+		return -1;
+	}
+   printf("alsa setup \n");
+
+  if(playbackf!=NULL)
+	snd_pcm_prepare(playback);
+
+
+
+	return 1;
+}
+
 int aread(short* output,int size){
 	int status;
 	if ((status=snd_pcm_readi(record, (char*)output, size))<0) {
 			//printf("read %d\n",status);
-			
+
 			return -1;
   	 }
   return 1;
@@ -101,7 +130,7 @@ void awrite(short* input, int bsize){
 
     //snd_pcm_link( record,playback);//synchornize
 		// snd_pcm_wait(playback,-1);
-		
+
 	 }else if(status<0){
 	 	 //printf("write %d\n",status);
 	 	//return -1;
@@ -110,7 +139,7 @@ void awrite(short* input, int bsize){
 	     snd_pcm_prepare(playback);
         //snd_pcm_link( record,playback);//synchornize
 	 }
-	 
+
 
 }
 int get_sample_rate(){

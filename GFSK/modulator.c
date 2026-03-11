@@ -43,6 +43,46 @@ struct gfsk_demod* create_gfsk_demod(float carrier_freq,int tx_rate,int sample_r
 
     return gfsk;
 }
+struct gfsk_demod* create_gfsk_demod_FM(float carrier_freq,int tx_rate,int sample_rate){
+    struct gfsk_demod* gfsk = malloc(sizeof(struct gfsk_demod));
+    gfsk->dcount = 0;
+    gfsk->dcount_max = sample_rate/tx_rate;
+
+    float rate_f = sample_rate;
+    float txrate_f = tx_rate;
+    gfsk->am = 0;
+    gfsk->am_2 = 0;
+
+    float tightness = 1;
+
+    float freq1 = carrier_freq;
+
+    gfsk->am_shifter = (freq1/rate_f)*(M_PI*2);
+    float filter_freq = txrate_f*tightness;
+
+    gfsk->frame = 0;
+    gfsk->p2 = 0;
+    gfsk->prev_bval = 0;
+    gfsk->p_i = 0;
+    gfsk->p_q = 0;
+
+    gfsk->lpf_q_1 = create_Bessel(filter_freq,rate_f);
+    gfsk->lpf_q_2 = create_Bessel(filter_freq,rate_f);
+    gfsk->lpf_i_1 = create_Bessel(filter_freq,rate_f);
+    gfsk->lpf_i_2 = create_Bessel(filter_freq,rate_f);
+
+    gfsk->lpf_q_11 = create_Bessel(filter_freq,rate_f);
+    gfsk->lpf_q_21 = create_Bessel(filter_freq,rate_f);
+    gfsk->lpf_i_11 = create_Bessel(filter_freq,rate_f);
+    gfsk->lpf_i_21 = create_Bessel(filter_freq,rate_f);
+    gfsk->bit_count = 0;
+    gfsk->packet_size = 0;
+
+    gfsk->preamb_manchester = 0;
+
+    return gfsk;
+}
+
 struct gfsk_mod* create_gfsk_mod(float carrier_freq,int tx_rate,int sample_rate,float drive){
     struct gfsk_mod* gfsk = malloc(sizeof(struct gfsk_mod));
 
@@ -287,6 +327,67 @@ int run_gfsk_mod(struct gfsk_mod* gfsk,short* audio,int size){
     }
     return done;
 }
+int run_gfsk_mod_IQ(struct gfsk_mod* gfsk,short* audio,int size,float offset,int flip){
+
+
+
+    int done = (gfsk->d_index >= gfsk->d_end);
+    for(short* i = audio;i<audio+(size<<1);i = i+2){
+        gfsk->count++;
+        if(gfsk->count >= gfsk->dcount_max){
+            if(done){
+                gfsk->value = -1.0;
+            }else{
+                int datav = *(gfsk->d_index);
+                int cmpr = 1<<(7-gfsk->bit_count);
+                if(datav&cmpr){
+                    gfsk->value = 1.0;
+                }else{
+                    gfsk->value = -1.0;
+                }
+
+
+                gfsk->bit_count++;
+            }
+            if(gfsk->bit_count >= 8){
+                gfsk->bit_count = 0;
+                gfsk->d_index++;
+                if(gfsk->d_index >= gfsk->d_end){
+                    done = 1;
+                }
+            }
+            gfsk->count = 0;
+        }
+
+        float shifter = gfsk->value;
+        float filter = calculate_lpf(gfsk->lpf_mod,shifter);
+        float filter2 = calculate_lpf(gfsk->lpf_mod_2,filter);
+
+
+        if(gfsk->DM){
+            *i = (short)(filter2*gfsk->baseline);
+
+            *(i+1) = (short)(filter2*gfsk->baseline);
+        }else{
+            float osc = sinf(gfsk->am);
+            float osc_90 = cosf(gfsk->am + offset);
+            gfsk->am +=(gfsk->am_shifter+(filter2*gfsk->mod_index));
+            if(gfsk->am >= M_2PI){
+                gfsk->am -= M_2PI;
+            }
+            if(flip){
+                *i = (short)((osc_90)*(gfsk->baseline));
+                *(i+1) = (short)((osc)*(gfsk->baseline));
+            }else{
+                *i = (short)((osc)*(gfsk->baseline));
+                *(i+1) = (short)((osc_90)*(gfsk->baseline));
+            }
+        }
+
+    }
+    return done;
+}
+
 void _set_gfsk_data_amb(struct gfsk_mod* gfsk, unsigned char* data,int length){
 
     if(gfsk->data)
@@ -341,6 +442,97 @@ void set_gfsk_data(struct gfsk_mod* gfsk, unsigned char* data,int length){
     gfsk->d_end = gfsk->data+len;
 
 
+}
+
+int run_gfsk_demod_FM(struct gfsk_demod* gfsk,short* in,char* obuffer,int size){
+
+    int chars = 0;
+    for(short* i = in;i<in+size;i++){
+        float in = *i;
+
+        float ai = sinf(gfsk->am)*in;
+        float aq = cosf(gfsk->am)*in;
+        float ai_1 = calculate_lpf(gfsk->lpf_i_1,ai);
+        ai = calculate_lpf(gfsk->lpf_i_2,ai_1);
+        float aq_1 = calculate_lpf(gfsk->lpf_q_1,aq);
+        aq = calculate_lpf(gfsk->lpf_q_2,aq_1);
+        float ai_2 = calculate_lpf(gfsk->lpf_i_11,ai);
+        ai = calculate_lpf(gfsk->lpf_i_21,ai_2);
+        float aq_2 = calculate_lpf(gfsk->lpf_q_11,aq);
+        aq = calculate_lpf(gfsk->lpf_q_21,aq_2);
+
+        gfsk->am +=gfsk->am_shifter;
+        if(gfsk->am >= M_2PI){
+            gfsk->am -= M_2PI;
+        }
+
+
+        if(ai == 0)
+            ai = 1e-16;
+        if(aq == 0)
+            aq = 1e-16;
+
+
+        float fm_top1 = (gfsk->p_i)*(aq - gfsk->p_q);
+        float fm_top2 = (gfsk->p_q)*(ai - gfsk->p_i);
+        float fm_bottom1 = gfsk->p_i*gfsk->p_i;
+        float fm_bottom2 = gfsk->p_q*gfsk->p_q;
+        float fm = (fm_top1 - fm_top2)/(fm_bottom1 + fm_bottom2);
+
+        gfsk->p_i = ai;
+        gfsk->p_q = aq;
+
+        int bval = 1;
+        if(fm<=0){
+                bval = 0;
+        }
+        //printf("%d %f \n",bval,fm);
+        if((gfsk->prev_bval) != bval && (gfsk->prev_bval ==  gfsk->p2)){
+              gfsk->dcount = (gfsk->dcount_max)>>1;
+        }else{
+              gfsk->dcount++;
+        }
+
+        if(gfsk->dcount >=gfsk->dcount_max){
+
+            int sum = bval+gfsk->prev_bval+gfsk->p2;
+            int val = 0;
+            if(sum >=2){
+                val = 1;
+            }
+            gfsk->frame = (gfsk->frame)<<1|val;
+            int out = 0;
+            if(gfsk->preamb_manchester){
+                out = _on_rx(gfsk->frame,gfsk);
+            }else{
+                out = _on_rx_amb(gfsk->frame,gfsk);
+            }
+            if(out == -2){
+                unsigned char* as_str = (unsigned char*)&gfsk->frame;
+                unsigned char delim1 = as_str[0];
+                unsigned char delim2 = as_str[1];
+                *obuffer = delim2;
+                obuffer++;
+                chars++;
+                *obuffer = delim1;
+                obuffer++;
+                chars++;
+
+            }else if(out!=-1){
+                *obuffer = out;
+                obuffer++;
+                chars++;
+            }
+            gfsk->dcount = 0;
+
+        }
+
+        gfsk->p2 = gfsk->prev_bval;
+        gfsk->prev_bval = bval;
+
+
+    }
+    return chars;
 }
 
 

@@ -1,6 +1,7 @@
 #ifndef ALSAI
 #define ALSAI
 int setup_alsa(char* record,char* playback, int buffer_size, int samplerate);
+int setup_alsa_IQ(char* playback, int buffer_size, int samplerate);
 void free_alsa();
 int get_sample_rate();
 

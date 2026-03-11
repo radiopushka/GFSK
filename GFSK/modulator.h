@@ -29,6 +29,8 @@ struct gfsk_demod{
     int prev_bval;
     int p2;
 
+    float p_i;
+    float p_q;
 
 
     uint16_t frame;
@@ -70,6 +72,7 @@ struct gfsk_mod{
 
 //gfsk demodulator
 struct gfsk_demod* create_gfsk_demod(float carrier_freq,int tx_rate,int sample_rate);
+struct gfsk_demod* create_gfsk_demod_FM(float carrier_freq,int tx_rate,int sample_rate);
 void free_gfsk_demod(struct gfsk_demod* gfsk);
 //gfsk modulator
 struct gfsk_mod* create_gfsk_mod(float carrier_freq,int tx_rate,int sample_rate,float drive);
@@ -78,7 +81,12 @@ void free_gfsk_mod(struct gfsk_mod* gfsk);
 
 
 int run_gfsk_demod(struct gfsk_demod* gfsk,short* in,char* obuffer,int size);//return the number of characters received
+int run_gfsk_demod_FM(struct gfsk_demod* gfsk,short* in,char* obuffer,int size);//return the number of characters received
 int run_gfsk_mod(struct gfsk_mod* gfsk,short* audio,int size);//return 1 if the entirity of data has been transmitter
+    //for generating SSB on IQ modulators
+    //if flip is set then the 90 degree and zero degree channels are flipped
+    //offset is the phase offset for best rejection
+int run_gfsk_mod_IQ(struct gfsk_mod* gfsk,short* audio,int size,float offset,int flip);//return 1 if the entirity of data has been transmitter
 
 void set_gfsk_data(struct gfsk_mod* gfsk, unsigned char* data,int length);//run after gfsk_mod returns 1 to set new data
 #endif

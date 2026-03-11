@@ -23,7 +23,7 @@ int main(){
 
     set_gfsk_data(mod,(unsigned char*)string,len_st);
     int framec = 0;
-    int make_array = 0;
+    int make_array = 1;
     while(1){
 
         if(run_gfsk_mod_IQ(mod,frame,bsize>>1,M_PI/5.56,1)){
@@ -51,7 +51,7 @@ int main(){
 
             make_array = 1;
         }
-        printf("sample\n");
+        //printf("sample\n");
         awrite(frame,bsize>>1);
 
     }

@@ -8,3 +8,6 @@
 - Use an SSB modulator and demodulator for maximum total spectral efficiency.
 
 <img width="1919" height="1173" alt="2026-01-28_16-57" src="https://github.com/user-attachments/assets/4c10739a-0d1f-4db7-8830-824775c09501" />
+
+![5055764089442864081](https://github.com/user-attachments/assets/934f6e60-24f1-4ee7-b8d0-397f4e75bf07)
+
